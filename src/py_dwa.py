@@ -50,8 +50,9 @@ def dist_cost(trajToCheck,goal):
     dist =  np.hypot(trajToCheck[-1,0] - goal[0], trajToCheck[-1,1] - goal[1])
     return dist#*(1/initialDistance)
 
-def velocity_cost(currentSpeed, maxSpeed):
-    return maxSpeed - abs(currentSpeed)
+
+def velocity_cost(currentSpeed, maxSpeed, currentAngular, maxAngular):
+    return  (maxAngular - abs(currentAngular)) #+(maxSpeed - abs(currentSpeed))
 
 
 def obstacle_cost(trajToCheck, obstacles):
@@ -64,9 +65,10 @@ def obstacle_cost(trajToCheck, obstacles):
         yDiff = np.vstack((yDiff, [trajToCheck[:, 1] - obstacle[1]]))
     euclidDistance = np.hypot(xDiff, yDiff)
     # check collision
-    dist = np.min(euclidDistance)
     # print("Min Range",np.min(scan.ranges))
-    # if (euclidDistance <= config.MAX_DIG_SIZE).any():
+
+    dist = np.min(euclidDistance)
+
     yaw = trajToCheck[:, 2]
     rot = np.array([[np.cos(yaw), -np.sin(yaw)], [np.sin(yaw), np.cos(yaw)]])
     rot = np.transpose(rot, [2, 0, 1])
@@ -82,6 +84,7 @@ def obstacle_cost(trajToCheck, obstacles):
                         np.logical_and(bottom_check, left_check))).any():
         return float("Inf"), dist
     # if dist <= config.MAX_DIG_SIZE:
+    # if (euclidDistance <= config.MAX_DIG_SIZE).any():
     #     return float("Inf"), dist
     return 1.0/dist, dist
 
@@ -89,11 +92,12 @@ def obstacle_cost(trajToCheck, obstacles):
 def laserToObs(currentLocation):
     obstacles = []
     for i, radius in enumerate(scan.ranges):
-        x = radius/config.FACTOR * math.cos(i*scan.angle_increment + scan.angle_min) + currentLocation[0]
-        y = radius/config.FACTOR * \
-            math.sin(i*scan.angle_increment + scan.angle_min) + \
-            currentLocation[1]
-        obstacles.append([x, y])
+        if radius is not float("inf") and radius <= config.LASER_THRESH:
+            x = radius/config.FACTOR * math.cos(i*scan.angle_increment + scan.angle_min) + currentLocation[0]
+            y = radius/config.FACTOR * \
+                math.sin(i*scan.angle_increment + scan.angle_min) + \
+                currentLocation[1]
+            obstacles.append([x, y])
         # rospy.loginfo(len(scan.ranges))
         # rospy.loginfo(3.14159/scan.angle_increment)
     # rospy.loginfo(obstacles)
@@ -112,7 +116,7 @@ def dwa(current, window, goal):
     bestVel = 0
     i = 0
     for vel in np.arange(window[0], window[1], config.RESO):
-        for yawRate in np.arange(window[2], window[3], config.RESO):
+        for yawRate in np.arange(window[2], window[3], config.RESO_angular):
             currentStatus = np.array(current)
             traj = np.array(currentStatus)  # array of dt goal points is traj
             for _ in np.arange(0, config.TIME_CALC, config.DT):
@@ -120,15 +124,18 @@ def dwa(current, window, goal):
                     currentStatus, vel, yawRate, config.DT)
                 traj = np.vstack((traj, currentStatus))  # new row add
 
+            # plt.plot(traj[:,0],traj[:,1],'g')
+
             obstacleDistance, dist = obstacle_cost(traj, obs)
             headingCost = heading_cost(traj, goal)
             distCost = dist_cost(traj, goal)
-            velocityCost = velocity_cost(vel, config.MAX_VEL)
+            velocityCost = velocity_cost(
+                vel, config.MAX_VEL, yawRate, config.MAX_YAWRATE)
             finalCost = obstacleDistance * config.OBSTACLEGAIN + velocityCost * \
                 config.VELOCITYGAIN + headingCost * config.HEADINGGAIN + distCost * config.DISTANCEGAIN
             # print(finalCost)
 
-            if minCost > finalCost:
+            if minCost >= finalCost:
                 minCost = finalCost
                 bestMove = [vel, yawRate]
                 bestTraj = traj
@@ -136,9 +143,8 @@ def dwa(current, window, goal):
                 bestObstacle = obstacleDistance * config.OBSTACLEGAIN
                 bestHeading = headingCost * config.HEADINGGAIN
                 bestVel = velocityCost * config.VELOCITYGAIN
-            # if (abs(bestMove[0]) < config.STUCK) and (abs(currentStatus[3]) < config.STUCK) and finalCost==float("inf"):
-            #     bestMove[0] = 0
-            #     bestMove[1] = config.MAX_ALPHA/5
+                if (abs(bestMove[0]) < config.STUCK) and (abs(currentStatus[3]) < config.STUCK):
+                    bestMove[0] = config.MAX_ACC/10
 
             # scan_portion = np.array(scan.ranges[:len(scan.ranges)/2-60])
             # scan_portion_centre = np.array(scan.ranges[len(scan.ranges)/2-60:len(scan.ranges)/2+60])
@@ -158,7 +164,7 @@ def dwa(current, window, goal):
 
             # elif obstacleDistance == float("inf"):
             #     print("COLLISION!!")
-            # elif finalCost == float("inf"):
+            # if finalCost == float("inf"):
             #     bestMove = [0.0, 0.1]
             # rospy.loginfo(yawRate)
             # rospy.loginfo(vel)
@@ -173,7 +179,6 @@ def dwa(current, window, goal):
     # plt.plot(bestTraj[:, 0], bestTraj[:, 1],'r')
     # i = i+1
     # plt.savefig(str(i)+".png")
-
 
 
 
@@ -210,7 +215,7 @@ def genTrajectory():
 
     rospy.Subscriber("/odometry/filtered", Odometry, callback)
     rospy.Subscriber('/scan_filtered', LaserScan, scan_callback)
-    rate = rospy.Rate(10)  # 10hz
+    rate = rospy.Rate(10000)
     pub = rospy.Publisher('cmd_vel', Twist, queue_size=10)
 
     # rospy.loginfo(genPoint([0, 0, 0], 1, 1, 0.5))
@@ -235,6 +240,8 @@ def genTrajectory():
                 print("Goal!")
                 twist.linear.x = 0
                 twist.angular.z = 0
+                pub.publish(twist)
+                raise rospy.exceptions.ROSInterruptException
 
             else:
                 move, traj = dwa([raw_data_pose.position.x,
