@@ -182,12 +182,12 @@ def dwa(current, window, goal):
 
 
 
-    print("Obstacle distance",dist)
-    print("Obstacle Cost", bestObstacle)
-    print("Heading Cost", bestHeading)
-    print("Dist Cost", bestDist)
-    print("Velocity Cost", bestVel)
-    print(bestMove, "Score" , minCost)
+    rospy.loginfo("Obstacle distance"+ str(dist))
+    rospy.loginfo("Obstacle Cost"+ str( bestObstacle))
+    rospy.loginfo("Heading Cost"+ str( bestHeading))
+    rospy.loginfo("Dist Cost"+ str( bestDist))
+    rospy.loginfo("Velocity Cost"+ str( bestVel))
+    rospy.loginfo(str(bestMove)+"Score" + str( minCost))
     # plt.plot(bestTraj[:, 0], bestTraj[:, 1])
     # plt.show()
     return bestMove, bestTraj
@@ -224,13 +224,13 @@ def genTrajectory():
     while not rospy.is_shutdown():
         # rospy.loginfo(raw_data_pose)
         # rospy.loginfo(raw_data_twist.angular.z)
+        start = rospy.get_time()
 
         dynamicWindowCurrent = dynamicWindow(
             raw_data_twist.linear.x, raw_data_twist.angular.z, config.DT, config.MAX_ACC, config.MAX_ALPHA, [config.MIN_VEL, config.MAX_VEL], config.MAX_YAWRATE)
         # rospy.loginfo(raw_data_pose)
         rospy.loginfo("###################")
-        print("Current Location",raw_data_pose.position.x,
-               raw_data_pose.position.y)
+        rospy.loginfo("Current Location"+str(raw_data_pose.position.x)+str(raw_data_pose.position.y))
         (roll, pitch, yaw) = euler_from_quaternion(
             [raw_data_pose.orientation.x, raw_data_pose.orientation.y, raw_data_pose.orientation.z, raw_data_pose.orientation.w])
         # plt.close()
@@ -256,8 +256,9 @@ def genTrajectory():
 
             # trajectory = np.vstack((trajectory, x))
         # plt.show()
-
-        rate.sleep()
+        rospy.loginfo((rospy.get_time())-start)
+        start = rospy.get_time()
+        # rate.sleep()
     rospy.spin()
 
 

@@ -12,7 +12,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
-
+#include <cmath>
 #include <Eigen/Dense>
 
 class DWAPlanner
@@ -52,6 +52,7 @@ public:
     void target_velocity_callback(const geometry_msgs::TwistConstPtr&);
     Window calc_dynamic_window(const geometry_msgs::Twist&);
     float calc_to_goal_cost(const std::vector<State>& traj, const Eigen::Vector3d& goal);
+    float calc_goal_heading_cost(const std::vector<State> &traj, const Eigen::Vector3d &goal);
     float calc_speed_cost(const std::vector<State>& traj, const float target_velocity);
     float calc_obstacle_cost(const std::vector<State>& traj, const std::vector<std::vector<float>>&);
     void motion(State& state, const double velocity, const double yawrate);
@@ -76,12 +77,15 @@ protected:
     double ANGLE_RESOLUTION;
     double PREDICT_TIME;
     double TO_GOAL_COST_GAIN;
+    double HEADING_COST_GAIN;
     double SPEED_COST_GAIN;
     double OBSTACLE_COST_GAIN;
     double DT;
     bool USE_SCAN_AS_INPUT;
     double GOAL_THRESHOLD;
     double TURN_DIRECTION_THRESHOLD;
+    double LENGTH_ROBOT;
+    double WIDTH_ROBOT;
 
     ros::NodeHandle nh;
     ros::NodeHandle local_nh;
@@ -100,6 +104,7 @@ protected:
     sensor_msgs::LaserScan scan;
     nav_msgs::OccupancyGrid local_map;
     geometry_msgs::Twist current_velocity;
+    geometry_msgs::PoseWithCovariance current_pos;
     bool local_goal_subscribed;
     bool scan_updated;
     bool local_map_updated;
