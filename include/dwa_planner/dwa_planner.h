@@ -58,8 +58,6 @@ public:
     void motion(State& state, const double velocity, const double yawrate);
     std::vector<std::vector<float>> raycast();
     std::vector<std::vector<float>> scan_to_obs();
-    void visualize_trajectories(const std::vector<std::vector<State>>&, const double, const double, const double, const int, const ros::Publisher&);
-    void visualize_trajectory(const std::vector<State>&, const double, const double, const double, const ros::Publisher&);
     std::vector<State> dwa_planning(Window, Eigen::Vector3d, std::vector<std::vector<float>>);
 
 protected:

@@ -140,7 +140,6 @@ std::vector<DWAPlanner::State> DWAPlanner::dwa_planning(
     ROS_INFO_STREAM("- Speed cost: " << min_speed_cost);
     ROS_INFO_STREAM("num of trajectories: " << trajectories.size());
     ROS_INFO_STREAM("Current location : " << current_pos.pose.position.x << "," << current_pos.pose.position.y << "," << current_pos.pose.position.z);
-    visualize_trajectories(trajectories, 1, 0, 0, 1000, candidate_trajectories_pub);
     if(min_cost == 1e6){
         std::vector<State> traj;
         State state(current_pos.pose.position.x, current_pos.pose.position.y, current_pos.pose.position.z, current_velocity.linear.x, current_velocity.angular.z);
@@ -181,7 +180,6 @@ void DWAPlanner::process(void)
 
                 cmd_vel.linear.x = best_traj[0].velocity;
                 cmd_vel.angular.z = best_traj[0].yawrate;
-                visualize_trajectory(best_traj, 1, 0, 0, selected_trajectory_pub);
             }else{
                 cmd_vel.linear.x = 0.0;
                 if(fabs(goal[2])>TURN_DIRECTION_THRESHOLD){
