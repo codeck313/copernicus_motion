@@ -143,7 +143,7 @@ add_dependencies(dwa_planner_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EX
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/dwa_planner_node.cpp)
-add_executable(dwa_planner src/dwa_planner_node.cpp)
+add_executable(dwa_planner src/dwa_planner.cpp)
 add_executable(dwa_testing src/dwa_testing.cpp)
 
 target_link_libraries(dwa_testing ${catkin_LIBRARIES})

@@ -30,7 +30,6 @@ public:
         double yaw;// robot orientation yaw
         double velocity;// robot linear velocity
         double yawrate;// robot angular velocity
-    private:
     };
 
     class Window
@@ -42,28 +41,27 @@ public:
         double max_velocity;
         double min_yawrate;
         double max_yawrate;
-    private:
     };
     void process(void);
+    void init(void);
     void local_goal_callback(const geometry_msgs::PoseStampedConstPtr&);
     void scan_callback(const sensor_msgs::LaserScanConstPtr&);
     void local_map_callback(const nav_msgs::OccupancyGridConstPtr&);
     void odom_callback(const nav_msgs::OdometryConstPtr&);
-    void target_velocity_callback(const geometry_msgs::TwistConstPtr&);
     Window calc_dynamic_window(const geometry_msgs::Twist&);
     float calc_to_goal_cost(const std::vector<State>& traj, const Eigen::Vector3d& goal);
     float calc_goal_heading_cost(const std::vector<State> &traj, const Eigen::Vector3d &goal);
-    float calc_speed_cost(const std::vector<State>& traj, const float target_velocity);
+    float calc_speed_cost(const std::vector<State>& traj, const float max_velocity);
     float calc_obstacle_cost(const std::vector<State>& traj, const std::vector<std::vector<float>>&);
     void motion(State& state, const double velocity, const double yawrate);
+    void v_best_trajectory(const std::vector<State> &traj, const double r, const double g, const double b, const ros::Publisher &pub);
+    void v_all_trajectories(const std::vector<std::vector<State>> &trajs, const double r, const double g, const double b, const ros::Publisher &pub);
     std::vector<std::vector<float>> raycast();
     std::vector<std::vector<float>> scan_to_obs();
     std::vector<State> dwa_planning(Window, Eigen::Vector3d, std::vector<std::vector<float>>);
 
 protected:
     double HZ;
-    std::string ROBOT_FRAME;
-    double TARGET_VELOCITY;
     double MAX_VELOCITY;
     double MIN_VELOCITY;
     double MAX_YAWRATE;
@@ -79,11 +77,12 @@ protected:
     double SPEED_COST_GAIN;
     double OBSTACLE_COST_GAIN;
     double DT;
-    bool USE_SCAN_AS_INPUT;
     double GOAL_THRESHOLD;
     double TURN_DIRECTION_THRESHOLD;
     double LENGTH_ROBOT;
     double WIDTH_ROBOT;
+    double GOAL_X;
+    double GOAL_Y;
 
     ros::NodeHandle nh;
     ros::NodeHandle local_nh;

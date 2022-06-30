@@ -2,8 +2,8 @@
 <package format="2">
   <name>dwa_planner</name>
   <version>0.0.0</version>
-  <description>The dwa_planner package</description>
-  <maintainer email="amsl@todo.todo">amsl</maintainer>
+  <description>The motion planner package for copernicus</description>
+  <maintainer email="sakshamsharma.ec19@rvce.edu.in">Saksham Sharma</maintainer>
 
   <license>BSD 3-Clause License</license>
 
